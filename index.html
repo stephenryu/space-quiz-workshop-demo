@@ -432,14 +432,24 @@
     const options = $("options");
     const action = $("action");
     const feedback = $("feedback");
+    let quizQuestions = questions;
     let current = 0;
     let score = 0;
     let answered = false;
 
+    function shuffle(list, random = Math.random) {
+      const copy = list.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
     function renderQuestion(moveFocus = false) {
       answered = false;
-      const item = questions[current];
-      $("progress-label").innerHTML = `<strong>${String(current + 1).padStart(2, "0")}</strong> / ${questions.length} 문항`;
+      const item = quizQuestions[current];
+      $("progress-label").innerHTML = `<strong>${String(current + 1).padStart(2, "0")}</strong> / ${quizQuestions.length} 문항`;
       $("category").textContent = item.category;
       $("question").textContent = item.question;
       $("question").setAttribute("aria-label", `${current + 1}번 문항. ${item.question}`);
@@ -484,7 +494,7 @@
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       if (answered) {
-        if (current === questions.length - 1) showResult();
+        if (current === quizQuestions.length - 1) showResult();
         else {
           current += 1;
           renderQuestion(true);
@@ -500,13 +510,13 @@
         return;
       }
       answered = true;
-      const item = questions[current];
+      const item = quizQuestions[current];
       const selectedIndex = Number(selected.value);
       const isCorrect = selectedIndex === item.answer;
       if (isCorrect) score += 10;
       $("score").textContent = `${score} 점`;
       $("progress").value = current + 1;
-      $("progress").textContent = `${current + 1} / ${questions.length}`;
+      $("progress").textContent = `${current + 1} / ${quizQuestions.length}`;
       options.querySelectorAll("input").forEach((input, index) => {
         input.disabled = true;
         const label = input.closest("label");
@@ -525,7 +535,7 @@
       explanation.textContent = item.explanation;
       feedback.replaceChildren(heading, explanation);
       feedback.hidden = false;
-      $("action-label").textContent = current === questions.length - 1 ? "탐사 결과 보기" : "다음 문항으로";
+      $("action-label").textContent = current === quizQuestions.length - 1 ? "탐사 결과 보기" : "다음 문항으로";
       action.setAttribute("aria-disabled", "false");
       action.focus();
     });
@@ -564,7 +574,7 @@
       $("result-description").textContent = reaction[2];
       animateFinalScore(score);
       $("correct-count").textContent = `${score / 10}개`;
-      $("wrong-count").textContent = `${questions.length - score / 10}개`;
+      $("wrong-count").textContent = `${quizQuestions.length - score / 10}개`;
       $("accuracy").textContent = `${score}%`;
       $("progress-label").textContent = "탐사 완료 · 10 / 10 문항";
       $("result-title").focus();
@@ -573,16 +583,18 @@
     $("restart").addEventListener("click", () => {
       cancelAnimationFrame(scoreAnimation);
       scoreAnimation = null;
+      quizQuestions = shuffle(questions);
       current = 0;
       score = 0;
       $("score").textContent = "0 점";
       $("progress").value = 0;
-      $("progress").textContent = `0 / ${questions.length}`;
+      $("progress").textContent = `0 / ${quizQuestions.length}`;
       $("result").hidden = true;
       form.hidden = false;
       renderQuestion(true);
     });
 
+    quizQuestions = shuffle(questions);
     renderQuestion();
   </script>
 </body>
